@@ -43,4 +43,9 @@ export class EmployeeController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.employeeService.remove(id);
   }
+
+  @Post(':id/create-meeting')
+  async createMeeting(@Param('id', ParseIntPipe) id: number) {
+    return await this.employeeService.createMeeting(id);
+  }
 }

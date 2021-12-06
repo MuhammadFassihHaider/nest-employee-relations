@@ -6,10 +6,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ContactInfo } from 'src/contact-info/entities/contact-info.entity';
+import { Meeting } from 'src/meeting/entities/meeting.entity';
 import { Repository } from 'typeorm';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { Employee } from './entities/employee.entity';
+import { Employee, EEmployeeRelations } from './entities/employee.entity';
 
 @Injectable()
 export class EmployeeService {
@@ -18,6 +19,8 @@ export class EmployeeService {
     private readonly empRepository: Repository<Employee>,
     @InjectRepository(ContactInfo)
     private readonly contactRepository: Repository<ContactInfo>,
+    @InjectRepository(Meeting)
+    private readonly meetingRepository: Repository<Meeting>,
   ) {}
 
   private async doesUserExist(createEmployeeDto: CreateEmployeeDto) {
@@ -56,13 +59,20 @@ export class EmployeeService {
   }
 
   async findAll() {
-    return await this.empRepository.find({ relations: ['contactInfo'] });
+    return await this.empRepository.find({
+      relations: [EEmployeeRelations.ContactInfo],
+    });
   }
 
   async findOne(id: number) {
     const employee = await this.empRepository.findOne({
       where: { id },
-      relations: ['contactInfo'],
+      relations: [
+        EEmployeeRelations.ContactInfo,
+        EEmployeeRelations.Meetings,
+        EEmployeeRelations.Tasks,
+        EEmployeeRelations.MeetingsCreated,
+      ],
     });
     if (employee) return employee;
     else throw new NotFoundException();
@@ -90,5 +100,25 @@ export class EmployeeService {
 
   async remove(id: number) {
     return await this.empRepository.delete(id);
+  }
+
+  async createMeeting(id: number) {
+    const employee = await this.empRepository.findOne({
+      where: { id },
+      relations: ['meetingsCreated', 'meetings'],
+    });
+
+    if (!employee) throw new NotFoundException('User not found!');
+
+    const meeting = this.meetingRepository.create({
+      zoomUrl: 'http://www.zoom.com/meeting/some-random-url',
+    });
+    meeting?.employee?.push(employee);
+    const savedMeetingResponse = await this.meetingRepository.save(meeting);
+
+    employee?.meetingsCreated?.push(savedMeetingResponse);
+    employee?.meetings?.push(savedMeetingResponse);
+
+    return await this.empRepository.save(employee);
   }
 }

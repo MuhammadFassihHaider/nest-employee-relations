@@ -1,15 +1,28 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 
-@Controller('task')
+@Controller('tasks')
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
-  @Post()
-  create(@Body() createTaskDto: CreateTaskDto) {
-    return this.taskService.create(createTaskDto);
+  @Post(':id')
+  create(
+    @Body() createTaskDto: CreateTaskDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.taskService.create(createTaskDto, id);
   }
 
   @Get()
@@ -18,8 +31,16 @@ export class TaskController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.taskService.findOne(+id);
+  findAllTasksForEmployee(@Param('id') id: string) {
+    return this.taskService.findAllTasksForEmployee(+id);
+  }
+
+  @Get(':id/search')
+  async search(
+    @Query('task') task: string,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return await this.taskService.searchTaskByName(task, id);
   }
 
   @Patch(':id')
@@ -27,8 +48,13 @@ export class TaskController {
     return this.taskService.update(+id, updateTaskDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.taskService.remove(+id);
+  @Delete('/remove-one/:taskId')
+  removeOne(@Param('taskId', ParseIntPipe) taskId: number) {
+    return this.taskService.removeOne(taskId);
+  }
+
+  @Delete('/remove-all/:userId')
+  removeAll(@Param('userId', ParseIntPipe) userId: number) {
+    return this.taskService.removeAll(userId);
   }
 }

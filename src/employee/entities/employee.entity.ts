@@ -44,4 +44,19 @@ export class Employee {
   @ManyToMany(() => Meeting, (meeting) => meeting.employee, { nullable: true })
   @JoinTable()
   meetings: Meeting[];
+
+  @OneToMany(() => Meeting, (meeting) => meeting.createdBy, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
+  meetingsCreated: Meeting[];
+}
+
+export enum EEmployeeRelations {
+  ContactInfo = 'contactInfo',
+  Tasks = 'tasks',
+  Manager = 'manager',
+  EmployeeReports = 'employeeReports',
+  Meetings = 'meetings',
+  MeetingsCreated = 'meetingsCreated',
 }
